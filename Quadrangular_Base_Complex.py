@@ -11,8 +11,8 @@ def load_data(ply_file_path):
     mesh = o3d.io.read_triangle_mesh(ply_file_path)
     lines = list(np.asarray(mesh.vertices))
     nodes = list()
-    for line in lines:
-        node = data_structure.Node([item for item in line])
+    for index, line in enumerate(lines):
+        node = data_structure.Node([item for item in line], index)
         nodes.append(node)
 
     # edge data
@@ -85,7 +85,7 @@ def get_Laplacian_matrix(nodes):
     for i, connections in L_dict.items():
         for j, value in connections.items():
             L[i][j] = value
-    return L, nodes
+    return L, edge_lengths
 
 
 def get_eigenfield(L):
@@ -97,7 +97,7 @@ def get_eigenfield(L):
 def classify_points(nodes, f_value):
     for index, node in enumerate(nodes):
         if len(node.connection) == 0:
-            node.set_type('regular')
+            node.set_category('regular')
             continue
         sequence = list()
         accessed = list()
@@ -125,13 +125,13 @@ def classify_points(nodes, f_value):
                 compare = f_value[index] > f_value[item]
         if changes == 0:
             if compare == True:
-                node.set_type('maximum')
+                node.set_category('maximum')
             else:
-                node.set_type('minimum')
+                node.set_category('minimum')
         elif changes <= 2:
-            node.set_type('regular')
+            node.set_category('regular')
         else:
-            node.set_type('saddle')
+            node.set_category('saddle')
 
 
 def find_maximum_neighbor(nodes, node, sequence, f_value, path_name):
@@ -142,9 +142,9 @@ def find_maximum_neighbor(nodes, node, sequence, f_value, path_name):
             max = f_value[item]
             max_index = index
     node.set_path(path_name, sequence[max_index])
-    if nodes[sequence[max_index]].type == 'maximum':
+    if nodes[sequence[max_index]].category == 'maximum':
         return
-    find_minimun_neighbor(nodes, node, nodes[sequence[max_index]].sequence, f_value, path_name)
+    find_maximum_neighbor(nodes, node, nodes[sequence[max_index]].sequence, f_value, path_name)
 
 
 def find_minimun_neighbor(nodes, node, sequence, f_value, path_name):
@@ -155,7 +155,7 @@ def find_minimun_neighbor(nodes, node, sequence, f_value, path_name):
             min = f_value[item]
             min_index = index
     node.set_path(path_name, sequence[min_index])
-    if nodes[sequence[min_index]].type == 'minimum':
+    if nodes[sequence[min_index]].category == 'minimum':
         return
     find_minimun_neighbor(nodes, node, nodes[sequence[min_index]].sequence, f_value, path_name)
 
@@ -163,7 +163,7 @@ def find_minimun_neighbor(nodes, node, sequence, f_value, path_name):
 def extract_Morse_Smale_Complex(nodes, f_value):
     saddle_nodes = list()
     for index, node in enumerate(nodes):
-        if node.type == 'saddle':
+        if node.category == 'saddle':
             saddle_nodes.append(node)
             compare = f_value[index] > f_value[node.sequence[0]]
             changes = list()
@@ -181,9 +181,8 @@ def extract_Morse_Smale_Complex(nodes, f_value):
                 find_minimun_neighbor(nodes, node, node.sequence[changes[3]:] + node.sequence[0: changes[0]],
                                       f_value, 'minimum2')
             else:
-                find_minimun_neighbor(nodes, node, node.sequence[changes[0]: changes[1]], f_value, 'minimum1')
-                find_minimun_neighbor(nodes, node, node.sequence[changes[2]: changes[3]], f_value, ' minimum2')
                 find_maximum_neighbor(nodes, node, node.sequence[changes[1]: changes[2]], f_value, 'maximum1')
-                find_maximum_neighbor(nodes, node, node.sequence[changes[3]:] + node.sequence[0: changes[0]],
-                                      f_value, 'maximum2')
+                find_maximum_neighbor(nodes, node, node.sequence[changes[3]:] + node.sequence[0: changes[0]], f_value, ' maximum2')
+                find_minimun_neighbor(nodes, node, node.sequence[changes[0]: changes[1]], f_value, 'minimum1')
+                find_minimun_neighbor(nodes, node, node.sequence[changes[2]: changes[3]], f_value, 'minimum2')
     return saddle_nodes
