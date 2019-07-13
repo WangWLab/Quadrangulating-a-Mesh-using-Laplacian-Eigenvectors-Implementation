@@ -9,11 +9,17 @@ class Node:
         self.path = dict()
         self.category = ''
         self.sequence = None
+        self.angle = dict()
+        self.extrema = list()
+        self.map_point = (0, 0)
 
     def add_connection(self, index, opposite):
         if index not in self.connection.keys():
             self.connection[index] = list()
         self.connection[index].append(opposite)
+
+    def set_angle(self, key, angle):
+        self.angle[key] = angle
 
     def get_num_of_neighbors(self):
         return len(self.connection)
@@ -32,6 +38,13 @@ class Node:
     def cancel(self):
         self.valid = False
         self.category = 'regular'
+
+    def set_extrema(self):
+        for value in self.path.values():
+            self.extrema.append(value[-1])
+
+    def set_map_point(self, coordinate):
+        self.map_point = coordinate
 
     def set_x(self, x):
         self.x = x

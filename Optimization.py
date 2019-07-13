@@ -11,13 +11,12 @@ def sort_persistence(saddle_nodes, f_value):
 
 def cancellation(saddle_nodes, nodes, f_value):
     persistence = sort_persistence(saddle_nodes, f_value)
-    print(len(persistence))
-    for item in persistence[:int(len(persistence)*0.05)]:
+    for item in persistence[:int(len(persistence)*0.4)]:
         index, path_name = item[0].split('-')
+        index = int(index)
         if nodes[index] in saddle_nodes:
             extrema = path_name[:len(path_name)-1]
             if nodes[index].path[extrema+'1'][-1] != nodes[index].path[extrema+'2'][-1]:
-                index = int(index)
                 opposite_path = extrema + ('1' if path_name[-1] == '2' else '2')
                 low_p_index = nodes[index].path[path_name][-1]
                 high_p_index = nodes[index].path[opposite_path][-1]
@@ -29,8 +28,9 @@ def cancellation(saddle_nodes, nodes, f_value):
                     for node in saddle_nodes:
                         for node_path_name, path in node.path.items():
                             if path[-1] == low_p_index:
-                                node[node_path_name].extend(nodes[index].path[path_name])
-                                node[node_path_name].extend(nodes[index].path[opposite_path])
+                                node.path[node_path_name].extend(nodes[index].path[path_name])
+                                node.path[node_path_name].append(nodes[index].index)
+                                node.path[node_path_name].extend(nodes[index].path[opposite_path])
 
 
 def merge_nearby_saddle(nodes, edge_lengths):
@@ -45,6 +45,7 @@ def merge_nearby_saddle(nodes, edge_lengths):
     for edge_start, item in edge_lengths.items():
         for edge_end, length in item.items():
             S[edge_start][edge_end] = length
+            S[edge_end][edge_start] = length
     for i in range(len(P)):
         for j in range(len(P[0])):
             P[i][j] = j
@@ -55,6 +56,7 @@ def merge_nearby_saddle(nodes, edge_lengths):
                 if S[i][j] > S[i][k] + S[k][j]:
                     S[i][j] = S[i][k] + S[k][j]
                     P[i][j] = P[i][k]
+    return P
 # TODO find the threshold to merge two nearby nodes
 
 

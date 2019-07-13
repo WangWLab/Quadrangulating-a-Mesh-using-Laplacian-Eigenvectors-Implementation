@@ -16,29 +16,18 @@ def load_data(ply_file_path):
         nodes.append(node)
 
     # edge data
-    # appeared = list(range(len(nodes)))
+    edges = list()
     lines = list(np.asarray(mesh.triangles))
     for line in lines:
         indexes = [item for item in line]
-        # for item in indexes:
-        #     if item in appeared:
-        #         appeared.remove(item)
-        if 8 in indexes:
-            print('exist')
-        if len(indexes) > len(set(indexes)):
-            print('error')
+        edges.append((indexes[0], indexes[1]))
+        edges.append((indexes[0], indexes[2]))
+        edges.append((indexes[1], indexes[2]))
         for i in range(len(indexes)):
             nodes[indexes[i]].add_connection(indexes[(i + 1) % 3], indexes[(i - 1) % 3])
             nodes[indexes[i]].add_connection(indexes[(i - 1) % 3], indexes[(i + 1) % 3])
 
-    # nodes_deleted = nodes.copy()
-    # del_list = list()
-    # for index, node in enumerate(nodes_deleted):
-    #     if len(node.connection) == 0:
-    #         del_list.append(node)
-    # for item in del_list:
-    #     nodes_deleted.remove(item)
-    return nodes
+    return nodes, edges
 
 
 def get_Laplacian_matrix(nodes):
@@ -51,11 +40,11 @@ def get_Laplacian_matrix(nodes):
     for index, node in enumerate(nodes):
         edge_lengths[index] = dict()
         for key in node.connection.keys():
-                edge_lengths[index][key] = math.sqrt(math.pow(node.x - nodes[key].x, 2) +
-                                                     math.pow(node.y - nodes[key].y, 2) +
-                                                     math.pow(node.z - nodes[key].z, 2))
+            edge_lengths[index][key] = math.sqrt(math.pow(node.x - nodes[key].x, 2) +
+                                                 math.pow(node.y - nodes[key].y, 2) +
+                                                 math.pow(node.z - nodes[key].z, 2))
 
-    #calculate all edges' weights
+    # calculate all edges' weights
     print('---------------calculating all edges weights---------------')
     weight = dict()
     for index, node in enumerate(nodes):
@@ -69,9 +58,10 @@ def get_Laplacian_matrix(nodes):
                 cos_angle = (math.pow(b, 2) + math.pow(c, 2) - math.pow(a, 2)) / (2 * b * c)
                 angle = math.acos(cos_angle)
                 cots.append(1/math.tan(angle))
+            node.set_angle(key, cots)
             weight[index][key] = sum(cots) / len(cots) * -1
 
-    #calculate Laplacian matrix
+    # calculate Laplacian matrix
     print('---------------calculating Laplacian matrix---------------')
 
     L_dict = dict()
@@ -176,13 +166,14 @@ def extract_Morse_Smale_Complex(nodes, f_value):
 
             if f_value[node.sequence[changes[0]]] > f_value[index]:
                 find_maximum_neighbor(nodes, node, node.sequence[changes[0]: changes[1]], f_value, 'maximum1')
-                find_maximum_neighbor(nodes, node, node.sequence[changes[2]: changes[3]], f_value,' maximum2')
+                find_maximum_neighbor(nodes, node, node.sequence[changes[2]: changes[3]], f_value, 'maximum2')
                 find_minimun_neighbor(nodes, node, node.sequence[changes[1]: changes[2]], f_value, 'minimum1')
                 find_minimun_neighbor(nodes, node, node.sequence[changes[3]:] + node.sequence[0: changes[0]],
                                       f_value, 'minimum2')
             else:
                 find_maximum_neighbor(nodes, node, node.sequence[changes[1]: changes[2]], f_value, 'maximum1')
-                find_maximum_neighbor(nodes, node, node.sequence[changes[3]:] + node.sequence[0: changes[0]], f_value, ' maximum2')
+                find_maximum_neighbor(nodes, node, node.sequence[changes[3]:] + node.sequence[0: changes[0]],
+                                      f_value, 'maximum2')
                 find_minimun_neighbor(nodes, node, node.sequence[changes[0]: changes[1]], f_value, 'minimum1')
                 find_minimun_neighbor(nodes, node, node.sequence[changes[2]: changes[3]], f_value, 'minimum2')
     return saddle_nodes

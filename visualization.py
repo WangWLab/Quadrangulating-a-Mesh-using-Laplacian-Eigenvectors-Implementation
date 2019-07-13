@@ -11,5 +11,5 @@ def generate_lines(saddle_nodes, nodes):
             line = Line(nodes_for_line)
             lines.append(line)
 
-    with open('lines.pkl', 'wb') as f:
+    with open('data\\lines.pkl', 'wb') as f:
         pickle.dump(lines, f)
