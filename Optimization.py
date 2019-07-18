@@ -31,6 +31,11 @@ def cancellation(saddle_nodes, nodes, f_value):
                                 node.path[node_path_name].extend(nodes[index].path[path_name])
                                 node.path[node_path_name].append(nodes[index].index)
                                 node.path[node_path_name].extend(nodes[index].path[opposite_path])
+    # TODO cancle saddle nodes whose two extrema path end at the same extrema point
+    extrema = ['maximum', 'minimum']
+    for node in saddle_nodes:
+        if node.path[extrema[0]+'1'][-1] == node.path[extrema[0]+'2'][-1] or node.path[extrema[1]+'1'][-1] == node.path[extrema[1]+'2'][-1]:
+            saddle_nodes.remove(node)
 
 
 def merge_nearby_saddle(nodes, edge_lengths):

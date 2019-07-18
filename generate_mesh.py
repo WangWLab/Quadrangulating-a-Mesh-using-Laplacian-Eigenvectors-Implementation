@@ -49,11 +49,6 @@ def traverse_inside_point(index, nodes, insides, boundary, other_boundary):
                 stack.append(key)
         i = stack.pop()
     return True
-        # counter += 1
-        # print(len(stack) + counter)
-        # if counter > 280:
-        #     sequence = data_structure.Line(sequence)
-        #     return sequence
 
 
 # find all patches
@@ -62,6 +57,8 @@ def get_complex_patches(nodes, saddle_nodes, f_value):
     patches = list()
     counter = 0
     for node1, node2, max_end, min_end in pairs:
+        # if node1.index == 6165 or node2.index == 6165:
+        #     print(node1.path, node2.path)
         boundary = list()
         other_bounaries = list()
         node1_extrema = list()
@@ -69,11 +66,28 @@ def get_complex_patches(nodes, saddle_nodes, f_value):
         for key, value in node1.path.items():
             if value[-1] == max_end or value[-1] == min_end:
                 node1_extrema.append(key)
-                boundary.extend(value)
+                # boundary.extend(value)
         for key, value in node2.path.items():
             if value[-1] == max_end or value[-1] == min_end:
                 node2_extrema.append(key)
-                boundary.extend(value)
+                # boundary.extend(value)
+        if set(node1.path[node1_extrema[0]][:-1]) & set(node2.path[node2_extrema[0]][:-1]):
+            for j in range(len(node1.path[node1_extrema[0]][:-1])):
+                if node1.path[node1_extrema[0]][j] in node2.path[node2_extrema[0]]:
+                    max_end = node1.path[node1_extrema[0]][j]
+                    break
+        if set(node1.path[node1_extrema[1]][:-1]) & set(node2.path[node2_extrema[1]][:-1]):
+            for j in range(len(node1.path[node1_extrema[1]][:-1])):
+                if node1.path[node1_extrema[1]][j] in node2.path[node2_extrema[1]]:
+                    min_end = node1.path[node1_extrema[1]][j]
+                    break
+        try:
+            boundary.extend(node1.path[node1_extrema[0]][:node1.path[node1_extrema[0]].index(max_end) + 1])
+            boundary.extend(node1.path[node1_extrema[1]][:node1.path[node1_extrema[1]].index(min_end) + 1])
+            boundary.extend(node2.path[node2_extrema[0]][:node2.path[node2_extrema[0]].index(max_end) + 1])
+            boundary.extend(node2.path[node2_extrema[1]][:node2.path[node2_extrema[1]].index(min_end) + 1])
+        except ValueError:
+            print(node1_extrema, node2_extrema, node1.index, node2.index)
         boundary.append(node1.index)
         boundary.append(node2.index)
         for node in saddle_nodes:
@@ -131,7 +145,24 @@ def get_complex_patches(nodes, saddle_nodes, f_value):
         # with open('data\\traverse_sequence.pkl', 'wb') as f:
         #     pickle.dump((ver_nodes, sequence), f)
         # the data in boundary and insides is index of node
-        patches.append((node1, node2, max_end, min_end, boundary, insides))
+        triangles = list()
+        all_nodes = boundary + insides
+        for node_index in all_nodes:
+            for key, values in nodes[node_index].connection.items():
+                for oppo in values:
+                    if key in all_nodes and oppo in all_nodes and {node_index, key, oppo} not in triangles:
+                        ver_in_triangle = {node_index, key, oppo} & {node1, node2, node1.path[node1_extrema[0]][-1], node1.path[node1_extrema[1]][-1]}
+                        rest = {node_index, key, oppo} - {node1, node2, node1.path[node1_extrema[0]][-1], node1.path[node1_extrema[1]][-1]}
+                        if ((node_index not in boundary or key not in boundary or oppo not in boundary) or
+                                len(rest) < 2 or
+                                (ver_in_triangle and
+                                 len(rest & set(node1.path[node1_extrema[0]])) < 2 and
+                                 len(rest & set(node1.path[node1_extrema[1]])) < 2 and
+                                 len(rest & set(node2.path[node2_extrema[0]])) < 2 and
+                                 len(rest & set(node2.path[node1_extrema[1]])) < 2 )):
+                            triangle = {node_index, key, oppo}
+                            triangles.append(triangle)
+        patches.append((node1, node2, max_end, min_end, boundary, insides, triangles))
         counter += 1
         print(str(counter) + 'th patch obtained')
     return patches
@@ -167,20 +198,20 @@ def map_boundary(nodes, node1, node2, max_end, min_end):
     sequences = list()
 
     for key, value in node1.path.items():
-        if value[-1] == max_end:
+        if max_end in value:
             node1_extrema[0] = key
-        elif value[-1] == min_end:
+        elif min_end in value:
             node1_extrema[1] = key
 
     for key, value in node2.path.items():
-        if value[-1] == max_end:
+        if max_end in value:
             node2_extrema[0] = key
-        elif value[-1] == min_end:
+        elif min_end in value:
             node2_extrema[1] = key
-    sequences.append([node1.index] + node1.path[node1_extrema[0]])
-    sequences.append(node2.path[node2_extrema[0]][::-1] + [node2.index])
-    sequences.append([node2.index] + node2.path[node2_extrema[1]])
-    sequences.append([node1.index] + node1.path[node1_extrema[1]])
+    sequences.append([node1.index] + node1.path[node1_extrema[0]][: node1.path[node1_extrema[0]].index(max_end) + 1])
+    sequences.append(node2.path[node2_extrema[0]][: node2.path[node2_extrema[0]].index(max_end) + 1][::-1] + [node2.index])
+    sequences.append([node2.index] + node2.path[node2_extrema[1]][: node2.path[node2_extrema[1]].index(min_end) + 1])
+    sequences.append([node1.index] + node1.path[node1_extrema[1]][: node1.path[node1_extrema[1]].index(min_end) + 1])
     node1.set_map_point((0, 0))
     node2.set_map_point((1, 1))
 
@@ -228,7 +259,7 @@ def calc_harmonic_energy(nodes, edges, weight):
 
 def map_to_quadrilateral(nodes, patch, map_threshold):
     # the data in boundary and insides is index of node
-    node1, node2, max_end, min_end, boundary, insides = patch
+    node1, node2, max_end, min_end, boundary, insides, triangles = patch
     patch_nodes = boundary + insides
     map_boundary(nodes, node1, node2, max_end, min_end)
     edges = list()
@@ -237,7 +268,6 @@ def map_to_quadrilateral(nodes, patch, map_threshold):
         for key in node.connection.keys():
             if (node.index, key) not in edges:
                 edges.append((node.index, key))
-
     weight = calc_weight(patch_nodes, nodes)
     E0 = calc_harmonic_energy(nodes, edges, weight)
     while True:
@@ -258,5 +288,130 @@ def map_to_quadrilateral(nodes, patch, map_threshold):
         if error > map_threshold:
             break
 
-def map_to_complex():
-    pass
+
+def triangle_area(a, b, c):
+    ab = (b[0] - a[0], b[1] - a[1])
+    bc = (c[0] - b[0], c[1] - b[1])
+    return abs((ab[0] * bc[1] - ab[1] * bc[0]) / 2)
+
+
+def is_in_triangle(nodes, triangle, p):
+    a, b, c = triangle
+    a = nodes[a].map_point
+    b = nodes[b].map_point
+    c = nodes[c].map_point
+    abc = triangle_area(a, b, c)
+    abp = triangle_area(a, b, p)
+    acp = triangle_area(a, c, p)
+    bcp = triangle_area(b, c, p)
+    sum_other = abp + acp + bcp
+    return abs((abc / sum_other) - 1) <= 0.001
+
+
+def calc_point_coor(nodes, triangle, mesh_point):
+    a, b, c = triangle
+    a = nodes[a].map_point
+    b = nodes[b].map_point
+    c = nodes[c].map_point
+    s_abc = triangle_area(a, b, c)
+    s_pbc = triangle_area(mesh_point, b, c)
+    s_pab = triangle_area(mesh_point, a, b)
+    s_pac = triangle_area(mesh_point, a, c)
+    if s_abc == 0:
+        return False, 0, 0, 0
+    is_in_triangle(nodes, triangle, mesh_point)
+    return True, s_pbc / s_abc, s_pac / s_abc, s_pab / s_abc
+
+
+def construct_grid(d):
+    mesh_point = list()
+    for i in [item / d for item in range(d+1)]:
+        for j in [item / d for item in range(d+1)]:
+            mesh_point.append((i, j))
+    mesh_quad_index = list()
+    for i in range(d):
+        for j in range(d):
+            mesh_quad_index.append((i * (d + 1) + j,
+                                    (i + 1) * (d + 1) + j,
+                                    (i + 1) * (d + 1) + j + 1,
+                                    i * (d + 1) + j + 1))
+            # mesh_quad_index.append((j * d + i, (j + 1) * d + i, (j + 1) * d + i + 1, j * d + i + 1))
+    return mesh_point, mesh_quad_index
+
+
+def map_to_complex_boundary(nodes, sequence, path):
+    map_point = dict()
+    map_point[sequence[0]] = (nodes[path[0]].x, nodes[path[0]].y, nodes[path[0]].z)
+    s = list()
+    s.insert(0, calc_length(nodes, path[0], path[1]))
+    for i in range(1, len(path) - 1):
+        s.append(s[i - 1] + calc_length(nodes, path[i], path[i + 1]))
+    for i in range(1, len(sequence)):
+        for j in range(len(s)):
+            if s[j] / s[-1] > (i / len(sequence)):
+                length = calc_length(nodes, path[j], path[j + 1])
+                a = s[-1] * i / len(sequence)
+                if j > 0:
+                    a -= s[j - 1]
+                lam = a / length
+                map_point[sequence[i]] = (nodes[path[j]].x * (1 - lam) + nodes[path[j + 1]].x * lam,
+                                          nodes[path[j]].y * (1 - lam) + nodes[path[j + 1]].y * lam,
+                                          nodes[path[j]].z * (1 - lam) + nodes[path[j + 1]].z * lam)
+                break
+    return map_point
+
+
+def map_to_complex(nodes, patch, d):
+    quad_mesh, mesh_quad_index = construct_grid(d)
+    node1, node2, max_end, min_end, boundary, insides, triangles = patch
+    point_triangle_dict = dict()
+    # find mesh point's corresponding triangle and its coordinate
+
+    for index, mesh_point in enumerate(quad_mesh):
+        for triangle in triangles:
+            if (mesh_point[0] != 0 and mesh_point[1] != 0 and mesh_point[0] != 1 and mesh_point[1] != 1) and \
+                    is_in_triangle(nodes, triangle, mesh_point):
+                res, p1, p2, p3 = calc_point_coor(nodes, triangle, mesh_point)
+                if not res:
+                    continue
+                point_triangle_dict[index] = (triangle, p1, p2, p3)
+
+    mesh_points_3d = dict()
+    for index, value in point_triangle_dict.items():
+        triangle, p1, p2, p3 = value
+        triangle = list(triangle)
+        point_3d_x = nodes[triangle[0]].x * p1 + nodes[triangle[1]].x * p2 + nodes[triangle[2]].x * p3
+        point_3d_y = nodes[triangle[0]].y * p1 + nodes[triangle[1]].y * p2 + nodes[triangle[2]].y * p3
+        point_3d_z = nodes[triangle[0]].z * p1 + nodes[triangle[1]].z * p2 + nodes[triangle[2]].z * p3
+        mesh_points_3d[index] = (point_3d_x, point_3d_y, point_3d_z)
+
+    # map quad mesh's boundaries to complex's boundaries
+    sequence = list()
+    for i in range(4):
+        sequence.append(list())
+    for i in range(d, -1, -1):
+        sequence[0].append(i)
+    for i in range(d * (d + 1), -1, -d - 1):
+        sequence[1].append(i)
+    for i in range(d * (d + 1), (d + 1) * (d + 1)):
+        sequence[2].append(i)
+    for i in range(d, d ** 2 + 2 * d + 1, d + 1):
+        sequence[3].append(i)
+    node1_extrema = [0, 0]
+    node2_extrema = [0, 0]
+    for key, path in node1.path.items():
+        if max_end in path:
+            node1_extrema[0] = key
+        if min_end in path:
+            node1_extrema[1] = key
+    for key, path in node2.path.items():
+        if max_end in path:
+            node2_extrema[0] = key
+        if min_end in path:
+            node2_extrema[1] = key
+    mesh_points_3d.update(map_to_complex_boundary(nodes, sequence[0], [node1.index] + node1.path[node1_extrema[0]][: node1.path[node1_extrema[0]].index(max_end) + 1]))
+    mesh_points_3d.update(map_to_complex_boundary(nodes, sequence[1], [node2.index] + node2.path[node2_extrema[0]][: node2.path[node2_extrema[0]].index(max_end) + 1]))
+    mesh_points_3d.update(map_to_complex_boundary(nodes, sequence[2], [node2.index] + node2.path[node2_extrema[1]][: node2.path[node2_extrema[1]].index(min_end) + 1]))
+    mesh_points_3d.update(map_to_complex_boundary(nodes, sequence[3], [node1.index] + node1.path[node1_extrema[1]][: node1.path[node1_extrema[1]].index(min_end) + 1]))
+    print(len(mesh_points_3d))
+    return mesh_points_3d, mesh_quad_index

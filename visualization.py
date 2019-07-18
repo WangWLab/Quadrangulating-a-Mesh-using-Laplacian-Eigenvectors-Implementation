@@ -2,6 +2,7 @@ from data_structure import Line
 import pickle
 
 
+# to prepare data for showing saddle nodes' path to extrema node
 def generate_lines(saddle_nodes, nodes):
     lines = list()
     for node in saddle_nodes:
