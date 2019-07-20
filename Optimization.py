@@ -10,6 +10,7 @@ def sort_persistence(saddle_nodes, f_value):
 
 
 def cancellation(saddle_nodes, nodes, f_value):
+    print('---------------executing cancellation---------------')
     persistence = sort_persistence(saddle_nodes, f_value)
     for item in persistence[:int(len(persistence)*0.4)]:
         index, path_name = item[0].split('-')
@@ -83,6 +84,7 @@ def compute_new_position(node, nodes, coe):
 
 
 def straighten_path(saddle_nodes, nodes, iteration, coe):
+    print('---------------straighten path---------------')
     for i in range(iteration):
         new_nodes = copy.deepcopy(nodes)
         for node in saddle_nodes:

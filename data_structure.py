@@ -3,14 +3,23 @@ class Node:
         self.x = coordinates[0]
         self.y = coordinates[1]
         self.z = coordinates[2]
+        # cancle之后设置valie为False
         self.valid = True
+        # 在node列表中的索引位置
         self.index = index
+        # 相邻结点，key是相邻结点的坐标，value是该node和key的连线所对的两个或一个结点
         self.connection = dict()
+        # 如果是鞍点，从该node出发到极值点经过的结点索引
         self.path = dict()
+        # 鞍点，常规点，极大极小值点
         self.category = ''
+        # sequence是遍历结点相邻结点的顺序
         self.sequence = None
+        # angle记录结点和相邻结点组成的边的对角角度
         self.angle = dict()
+        # extrema记录结点连接的极值点的索引
         self.extrema = list()
+        # map_point记录map到单位正方形之后的坐标
         self.map_point = (0, 0)
 
     def add_connection(self, index, opposite):

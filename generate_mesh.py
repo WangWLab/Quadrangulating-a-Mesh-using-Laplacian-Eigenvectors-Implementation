@@ -53,6 +53,7 @@ def traverse_inside_point(index, nodes, insides, boundary, other_boundary):
 
 # find all patches
 def get_complex_patches(nodes, saddle_nodes, f_value):
+    print('---------------obtaining complex patches---------------')
     pairs = get_pairs(saddle_nodes)
     patches = list()
     counter = 0
@@ -258,6 +259,7 @@ def calc_harmonic_energy(nodes, edges, weight):
 
 
 def map_to_quadrilateral(nodes, patch, map_threshold):
+    print('---------------mapping complex patch to quadrilateral---------------')
     # the data in boundary and insides is index of node
     node1, node2, max_end, min_end, boundary, insides, triangles = patch
     patch_nodes = boundary + insides
@@ -362,6 +364,7 @@ def map_to_complex_boundary(nodes, sequence, path):
 
 
 def map_to_complex(nodes, patch, d):
+    print('---------------mapping back mesh point to complex---------------')
     quad_mesh, mesh_quad_index = construct_grid(d)
     node1, node2, max_end, min_end, boundary, insides, triangles = patch
     point_triangle_dict = dict()
@@ -415,3 +418,31 @@ def map_to_complex(nodes, patch, d):
     mesh_points_3d.update(map_to_complex_boundary(nodes, sequence[3], [node1.index] + node1.path[node1_extrema[1]][: node1.path[node1_extrema[1]].index(min_end) + 1]))
     print(len(mesh_points_3d))
     return mesh_points_3d, mesh_quad_index
+
+
+def convert(path):
+    with open(path, 'rb') as f:
+        result = pickle.load(f)
+    mesh_points = list()
+    quads = list()
+    for mesh_points_3d, mesh_quad_index in result:
+        length = len(mesh_points)
+        for quad in mesh_quad_index:
+            quads.append([item + length for item in quad])
+        for index, item in enumerate(sorted(mesh_points_3d.items(), key=lambda d: d[0])):
+            temp = list()
+            temp.append(index + length)
+            for dem in item[1]:
+                temp.append(dem)
+            mesh_points.append(temp)
+    with open('data\\result.m', 'w') as f:
+        for item in mesh_points:
+            f.write('Vertex ')
+            for i in item:
+                f.write(str(i+1) + ' ')
+            f.write(' {uv=(0 0)}\n')
+        for counter, indexes in enumerate(quads):
+            f.write('Face ' + str(counter+1) + ' ')
+            for item in indexes:
+                f.write(str(item) + ' ')
+            f.write('\n')

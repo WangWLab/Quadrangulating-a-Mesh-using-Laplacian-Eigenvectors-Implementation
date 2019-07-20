@@ -85,6 +85,7 @@ def get_eigenfield(L):
 
 
 def classify_points(nodes, f_value):
+    print('---------------calssifying points---------------')
     for index, node in enumerate(nodes):
         if len(node.connection) == 0:
             node.set_category('regular')
@@ -151,6 +152,7 @@ def find_minimun_neighbor(nodes, node, sequence, f_value, path_name):
 
 
 def extract_Morse_Smale_Complex(nodes, f_value):
+    print('---------------extracting Morse Smale complex---------------')
     saddle_nodes = list()
     for index, node in enumerate(nodes):
         if node.category == 'saddle':
